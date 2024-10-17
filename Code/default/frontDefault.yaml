@@ -1,0 +1,62 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: [ContainerName]
+  namespace: default
+  labels:
+    app: [ContainerName]
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: [ContainerName]
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: [ContainerName]
+    spec:
+      containers:
+      - image: [DockerImage]
+        imagePullPolicy: IfNotPresent
+        name: [ContainerName]
+        env:
+[DefaultENV]
+        resources:
+          limits:
+            cpu: 800m
+            ephemeral-storage: 500Mi
+            memory: 1Gi
+          requests:
+            cpu: 700m
+            ephemeral-storage: 250Mi
+            memory: 700Mi
+        securityContext:
+          capabilities:
+            drop:
+            - NET_RAW
+          runAsUser: 1000
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /app/.next/cache
+          name: data-volume-cache
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+      terminationGracePeriodSeconds: 30
+      tolerations:
+      - effect: NoSchedule
+        key: kubernetes.io/arch
+        operator: Equal
+        value: amd64
+      volumes:
+      - emptyDir: {}
+        name: data-volume-cache

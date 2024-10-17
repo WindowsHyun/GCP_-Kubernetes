@@ -1,0 +1,162 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: [ContainerName]
+  namespace: default
+  labels:
+    app: [ContainerName]
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: [ContainerName]
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: [ContainerName]
+    spec:
+      containers:
+      - env:
+[DefaultENV]        
+        image: [DockerImage]
+        imagePullPolicy: IfNotPresent
+        name: [ContainerName]
+        resources:
+          limits:
+            cpu: 550m
+            ephemeral-storage: 1Gi
+            memory: 2Gi
+          requests:
+            cpu: 550m
+            ephemeral-storage: 1Gi
+            memory: 2Gi
+        securityContext:
+          capabilities:
+            drop:
+            - NET_RAW
+          runAsUser: 1000
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /configmap-volume/apple_conf.json
+          name: storage-credentials
+          subPath: apple_conf.json
+        - mountPath: /configmap-volume/firebase_dev_credential.json
+          name: storage-credentials
+          subPath: firebase_dev_credential.json
+        - mountPath: /configmap-volume/firebase_live_credential.json
+          name: storage-credentials
+          subPath: firebase_live_credential.json
+        - mountPath: /configmap-volume/query_credential.json
+          name: storage-credentials
+          subPath: query_credential.json
+        - mountPath: /configmap-volume/sheet_credential.json
+          name: storage-credentials
+          subPath: sheet_credential.json
+        - mountPath: /configmap-volume/storage_credential.json
+          name: storage-credentials
+          subPath: storage_credential.json
+        - mountPath: /configmap-volume/rsa_credential.pem
+          name: storage-credentials
+          subPath: rsa_credential.pem
+        - mountPath: /workdir/conf
+          name: data-volume-conf
+        - mountPath: /workdir/static
+          name: data-volume-static
+        - mountPath: /workdir/design
+          name: data-volume-design
+        - mountPath: /workdir/logs
+          name: data-volume-logs
+      - env:
+        - name: LS_JAVA_OPTS
+          value: -Djavax.net.ssl.trustStore=/usr/share/logstash/config/elastic-certs/http_ca.crt
+        image: logstash:8.14.0
+        imagePullPolicy: IfNotPresent
+        name: logstash-2
+        resources:
+          limits:
+            cpu: 700m
+            ephemeral-storage: 2Gi
+            memory: 2Gi
+          requests:
+            cpu: 700m
+            ephemeral-storage: 2Gi
+            memory: 2Gi
+        securityContext:
+          capabilities:
+            drop:
+            - NET_RAW
+          runAsUser: 1000
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /workdir/logs
+          name: data-volume-logs
+        - mountPath: /usr/share/logstash/pipeline
+          name: logstash-config
+        - mountPath: /usr/share/logstash/config/elastic-certs
+          name: elastic-certs
+      dnsPolicy: ClusterFirst
+      initContainers:
+      - command:
+        - sh
+        - -c
+        - chmod -R 777 /workdir/logs
+        image: busybox
+        imagePullPolicy: Always
+        name: init-permissions
+        resources:
+          limits:
+            cpu: 1250m
+            ephemeral-storage: 3Gi
+            memory: 4Gi
+          requests:
+            cpu: 1250m
+            ephemeral-storage: 3Gi
+            memory: 4Gi
+        securityContext:
+          capabilities:
+            drop:
+            - NET_RAW
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /workdir/logs
+          name: data-volume-logs
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+      terminationGracePeriodSeconds: 30
+      tolerations:
+      - effect: NoSchedule
+        key: kubernetes.io/arch
+        operator: Equal
+        value: amd64
+      volumes:
+      - name: storage-credentials
+        secret:
+          defaultMode: 420
+          secretName: storage-credentials
+      - emptyDir: {}
+        name: data-volume-conf
+      - emptyDir: {}
+        name: data-volume-static
+      - emptyDir: {}
+        name: data-volume-design
+      - emptyDir: {}
+        name: data-volume-logs
+      - configMap:
+          defaultMode: 420
+          name: [ContainerName]-logstash
+        name: logstash-config
+      - name: elastic-certs
+        secret:
+          defaultMode: 420
+          secretName: elastic-http-cert

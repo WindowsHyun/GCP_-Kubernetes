@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: [ContainerName]-lb
+  annotations:
+    cloud.google.com/neg: '{"ingress": true}'
+    cloud.google.com/load-balancer-type: "Internal"  # 내부 Load Balancer 설정
+spec:
+  type: LoadBalancer
+  ports:
+    - port: [ContainerPort]
+      targetPort: [ContainerTargetPort]
+  selector:
+    app: [ContainerName]

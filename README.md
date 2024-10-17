@@ -62,3 +62,9 @@ docker push us-west1-docker.pkg.dev/[자신이 설정한 리소스]/kubernetes/m
 
 ### 6. Google Cloud Artifact Registry 업로드 확인하기
 ![Check Upload Image](./Image/artifact/UploadImage.png)
+```
+이미지가 정상적으로 업로드가 되었는지 확인을 합니다.
+```
+
+### 7. Jenkins Go Build & Push & Run 방법
+* [Jenkins Build](Jenkins.md)
