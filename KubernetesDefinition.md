@@ -6,8 +6,6 @@ default
  - kubernetes 구성을 위한 파일 폴더
 kubernetes
  - 구성된 파일들을 보관하는 폴더
-website
- - 미정...
 ```
 
 ### 1. credential 폴더 내용
@@ -62,3 +60,8 @@ logstashDefault.yaml
 ```
 
 ### 2-1. tls 구성 방법
+```
+kubectl create secret tls website-tls \
+         --cert=origin-certificate.pem \
+         --key=origin-certificate-key.pem
+```
